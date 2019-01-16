@@ -33,6 +33,13 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/wait.h>
+
+#ifdef __FreeBSD__
+#include <cstring>
+#include <sys/types.h>
+#include <sys/wait.h>
+#endif
 
 using namespace std;
 struct task_t
@@ -85,14 +92,12 @@ static void *readwrite_routine( void *arg )
 			{
 				ret = write( fd,buf,ret );
 			}
-			if( ret <= 0 )
+			if( ret > 0 || ( -1 == ret && EAGAIN == errno ) )
 			{
-				// accept_routine->SetNonBlock(fd) cause EAGAIN, we should continue
-				if (errno == EAGAIN)
-					continue;
-				close( fd );
-				break;
+				continue;
 			}
+			close( fd );
+			break;
 		}
 
 	}
